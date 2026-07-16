@@ -1,0 +1,141 @@
+/**
+ * Hand-written types mirroring the SQL schema in
+ * /supabase/migrations/0001_init.sql
+ *
+ * Once the project is linked to a real Supabase project you can replace
+ * this file with the output of:
+ *   npx supabase gen types typescript --project-id <id> > lib/supabase/types.ts
+ * without changing any call sites, since the shape is the same.
+ */
+
+export interface Database {
+  public: {
+    Tables: {
+      tournaments: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          created_at?: string;
+        };
+      };
+      days: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          day_number: number;
+          label: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tournament_id: string;
+          day_number: number;
+          label?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tournament_id?: string;
+          day_number?: number;
+          label?: string | null;
+          created_at?: string;
+        };
+      };
+      matches: {
+        Row: {
+          id: string;
+          day_id: string;
+          match_number: number;
+          map_name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          day_id: string;
+          match_number: number;
+          map_name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          day_id?: string;
+          match_number?: number;
+          map_name?: string;
+          created_at?: string;
+        };
+      };
+      teams: {
+        Row: {
+          id: string;
+          tournament_id: string;
+          name: string;
+          tag: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tournament_id: string;
+          name: string;
+          tag?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          tournament_id?: string;
+          name?: string;
+          tag?: string | null;
+          created_at?: string;
+        };
+      };
+      match_slots: {
+        Row: {
+          id: string;
+          match_id: string;
+          slot_number: number;
+          team_id: string | null;
+          is_locked: boolean;
+          position: number | null;
+          kills: number;
+          // Generated columns — Postgres computes these, never write to them.
+          placement_points: number;
+          total_points: number;
+          wwcd: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          match_id: string;
+          slot_number: number;
+          team_id?: string | null;
+          is_locked?: boolean;
+          position?: number | null;
+          kills?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          match_id?: string;
+          slot_number?: number;
+          team_id?: string | null;
+          is_locked?: boolean;
+          position?: number | null;
+          kills?: number;
+          created_at?: string;
+        };
+      };
+    };
+  };
+}
