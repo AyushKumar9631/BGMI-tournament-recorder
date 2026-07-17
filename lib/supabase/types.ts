@@ -181,7 +181,33 @@ export interface Database {
         ];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      day_standings: {
+        Row: {
+          day_id: string;
+          tournament_id: string;
+          team_id: string;
+          team_name: string;
+          team_tag: string | null;
+          total_points: number;
+          total_kills: number;
+          wwcd_count: number;
+        };
+        Relationships: [];
+      };
+      tournament_standings: {
+        Row: {
+          tournament_id: string;
+          team_id: string;
+          team_name: string;
+          team_tag: string | null;
+          total_points: number;
+          total_kills: number;
+          wwcd_count: number;
+        };
+        Relationships: [];
+      };
+    };
     Functions: Record<string, never>;
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

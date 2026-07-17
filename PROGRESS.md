@@ -56,6 +56,36 @@ Full CRUD flow, replacing the Session 1 placeholder homepage:
 - `npm run build` passes clean (typecheck + lint + build all green) as of this session.
 - **Not yet pushed/deployed** — these Session 2 changes exist locally in this sandbox only. You'll need to copy them into your existing repo and push; Vercel will auto-redeploy since it's already connected. No schema changes were needed (Session 2 uses the same tables from Session 1's migration).
 
+## What's built (Session 3)
+
+Standings aggregation + edit/delete for teams, days, and matches:
+
+- **`supabase/migrations/0002_standings_views.sql`** — two Postgres views, `day_standings` and `tournament_standings`. Both are **inner-joined through `match_slots`** (not a `left join` from `teams`), so a team only appears once it's actually been assigned to a slot with results — this was checked against the reference tournament sheet, where a day's Overall Standings only lists that day's actual roster, and different days can have entirely different rosters. Includes explicit `grant select ... to anon, authenticated` on both views (Supabase's default privileges usually cover new views automatically, but this makes it certain rather than assumed). **Not yet run against the live Supabase project — you need to paste this into the SQL editor**, same as `0001_init.sql` was.
+- **`lib/supabase/types.ts`** — added the `Views` entries for `day_standings`/`tournament_standings` (was `Record<string, never>` before).
+- **`lib/data.ts`**:
+  - `getDayStandings(dayId)` / `getTournamentStandings(tournamentId)` — read the two views, sorted `total_points desc, total_kills desc` as the tiebreaker.
+  - `getDaysForTournament`, `getMatchesForDay`, `getTeamsForTournament` now each return one extra field (`match_count`, `slot_count`, `slot_count` respectively) computed via a second lightweight query rather than an embedded `matches(count)`/`match_slots(count)` select — sidesteps the postgrest-js embedded-count generics, which is the same class of typing issue Session 1 hit with plain column selects. These are additive fields; nothing that read the old shape breaks.
+- **`components/StandingsTable.tsx`** — plain server-renderable table (rank / team / points / kills / WWCD count), used on both the day view and tournament dashboard.
+- **`components/ConfirmButton.tsx`** — reusable inline "are you sure?" control (click → shows the cascade-consequence message + Confirm/Cancel) used by every delete action below. Not a modal — no dialog library in this project, and this fits the existing lightweight open/closed-toggle pattern the Add*Form components already use.
+- **`components/TeamCard.tsx`** — replaces the plain team div: inline edit (name/tag) and delete-with-confirmation. The confirm message reflects `slot_count` ("Used in N slots — those will show as unassigned, scores stay") since deleting a team only nulls `match_slots.team_id` (`on delete set null`), it never deletes score history.
+- **`components/DayRow.tsx`** / **`components/MatchRow.tsx`** — replace the plain Link blocks in the Days/Matches lists: still link through to the day/match, but now also have Edit (label-only for days, map-only for matches — `day_number`/`match_number` are intentionally not editable, see the API routes) and Delete-with-confirmation, message built from `match_count`/`slot_count` ("Deletes 4 matches and all their scores.").
+- **New API routes**, same server-role-client pattern as everything else:
+  - `PATCH /api/teams/[teamId]` / `DELETE /api/teams/[teamId]`
+  - `PATCH /api/days/[dayId]` (label only) / `DELETE /api/days/[dayId]` (cascades to matches + slots)
+  - `PATCH /api/matches/[matchId]` (map only) / `DELETE /api/matches/[matchId]` (cascades to slots)
+- **Pages updated**: `/t/[slug]` now has a "Tournament Standings" section at the top (above Days/Teams — it's the headline info for a returning visitor) and uses `DayRow`/`TeamCard`. `/t/[slug]/day/[dayNumber]` now has an "Overall Standings — Day N" section and uses `MatchRow`.
+- **`npm run build` passes clean** (typecheck + lint + build all green) — verified in this sandbox.
+- **Not yet pushed/deployed**, and **the migration hasn't been run against your live Supabase project yet** — see the checklist below.
+
+## What you (the human) need to do after Session 3
+
+1. Open the Supabase SQL editor for this project and run `supabase/migrations/0002_standings_views.sql` (paste its contents in, same as you did for `0001_init.sql`).
+2. Copy the updated project files into your local clone (or unzip over it).
+3. `git add -A && git commit -m "Session 3: standings + team/day/match management" && git push` — Vercel auto-redeploys.
+4. Click through: open a tournament with existing Day 1 data → confirm "Tournament Standings" shows the right teams/points/kills at the top → open Day 1 → confirm "Overall Standings — Day 1" matches what you'd expect from that day's matches alone → edit a team's tag → delete a team with 0 slots used (should have no scary warning) → try editing/deleting a match and a day, reading the confirmation message before confirming.
+
+Tell the next session your confirmation this worked (or any bugs) so it can be recorded here.
+
 ## Schema (already in supabase/migrations/0001_init.sql)
 
 - **tournaments** — `id, name, slug (unique), created_at`
@@ -90,21 +120,20 @@ Tell the next session your confirmation that this worked (or any bugs you hit) s
 
 ## Known gaps / not done yet
 
-- No standings aggregation yet (Day Overall Standings, Tournament Standings) — that's Session 3.
-- No edit/delete for teams, days, or matches yet — also Session 3.
 - No auth (intentional per the plan — deferred).
 - No public read-only view separate from the edit view (intentional — deferred).
-- No duplicate-team-name validation, no mobile/responsive pass, no empty/loading skeletons beyond basic "No X yet" text, no CSV export — all Session 4 polish items per the plan.
+- No duplicate-team-name validation, no mobile/responsive pass, no empty/loading skeletons beyond basic "No X yet" text, no CSV export, no "duplicate match" shortcut, no WWCD row highlight in the match table — all Session 4 polish items per the plan.
+- Editing a day only changes its `label`; editing a match only changes its `map_name`. `day_number`/`match_number` are intentionally locked to keep ordering/URLs/uniqueness constraints safe — there's no resequencing UI. Flag to the human if this becomes a real need; it's a deliberate scope cut, not an oversight.
+- Standings views assume a team only "counts" for a day/tournament once it's been assigned to at least one slot — a newly-created team with zero matches played simply won't appear yet, by design.
 
-## What Session 3 should do next
+## What Session 4 should do next
 
-Per the plan, build standings aggregation + team/match management:
+Per the plan, this is the polish pass:
 
-1. Two Postgres views as a new migration (`day_standings`, `tournament_standings`) summing `total_points`/`kills`/`wwcd` per team — `day_standings` scoped to one day's matches, `tournament_standings` across the whole tournament. Verify the join scoping is correct (a team's day total should only include that day's matches, not the whole tournament).
-2. "Day Overall Standings" table on the day view: rank / team / total points / total kills / WWCD count, sorted by points desc with kills as tiebreaker.
-3. "Tournament Standings" tab on the tournament dashboard, same shape, tournament-wide.
-4. Team management: edit name/tag, delete a team (confirm this correctly nulls out `match_slots.team_id` via the existing `on delete set null` rather than deleting match history).
-5. Edit/delete for Days and Matches, with confirmation dialogs that make the cascade consequence explicit (e.g. "This will delete 4 matches and all their scores").
-6. Update PROGRESS.md and set "what Session 4 should do" as: UI/UX polish, responsiveness, validation/empty states, and final production checks.
+1. Responsive/mobile pass — the match score table and standings tables need to work on a phone screen (horizontal scroll or stacked-card layout, not a squeezed table).
+2. Empty/loading/error states across the board; friendlier surfacing of DB constraint errors (e.g. duplicate slot number) instead of raw Postgres error text.
+3. Validation: reject negative Position/Kills (already true at the input level via `min`, but double-check the API routes reject them too), case-insensitive duplicate-team-name check within a tournament.
+4. Quality-of-life: "Duplicate match" button (clone a match's slot/team structure into a new match with position/kills blanked), WWCD row highlight in `SlotRow`, CSV export of standings tables.
+5. Visual pass for consistency, then a final production checklist (env vars in Vercel, RLS intent, full click-through) — see the original plan document for the exact checklist.
 
-Full session prompt text (including the exact SQL for the two views) lives in the original plan document (`bgmi-tournament-site-plan.md`) if you need to paste it verbatim into a fresh session.
+Full session prompt text lives in the original plan document (`bgmi-tournament-site-plan.md`) if you need to paste it verbatim into a fresh session — note that document's Session 4 prompt doesn't yet know about the specific components/routes built in Sessions 2–3 above, so tell the fresh session to read this file first regardless.

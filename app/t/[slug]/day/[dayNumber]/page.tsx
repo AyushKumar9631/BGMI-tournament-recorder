@@ -4,8 +4,11 @@ import {
   getTournamentBySlug,
   getDayByNumber,
   getMatchesForDay,
+  getDayStandings,
 } from "@/lib/data";
 import AddMatchForm from "@/components/AddMatchForm";
+import MatchRow from "@/components/MatchRow";
+import StandingsTable from "@/components/StandingsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +24,10 @@ export default async function DayView({
   const day = await getDayByNumber(tournament.id, dayNumber);
   if (!day) notFound();
 
-  const matches = await getMatchesForDay(day.id);
+  const [matches, standings] = await Promise.all([
+    getMatchesForDay(day.id),
+    getDayStandings(day.id),
+  ]);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 p-8">
@@ -54,17 +60,25 @@ export default async function DayView({
           ) : (
             <div className="space-y-2">
               {matches.map((m) => (
-                <Link
+                <MatchRow
                   key={m.id}
-                  href={`/t/${tournament.slug}/day/${day.day_number}/match/${m.match_number}`}
-                  className="flex items-center justify-between rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3 hover:border-neutral-700"
-                >
-                  <span className="font-medium">Match {m.match_number}</span>
-                  <span className="text-sm text-neutral-400">{m.map_name}</span>
-                </Link>
+                  slug={tournament.slug}
+                  dayNumber={day.day_number}
+                  match={m}
+                />
               ))}
             </div>
           )}
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium text-neutral-300 uppercase tracking-wide">
+            Overall Standings — Day {day.day_number}
+          </h2>
+          <StandingsTable
+            rows={standings}
+            emptyMessage="No results yet — standings fill in once this day's matches have scores."
+          />
         </section>
       </div>
     </main>

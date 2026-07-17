@@ -4,9 +4,13 @@ import {
   getTournamentBySlug,
   getDaysForTournament,
   getTeamsForTournament,
+  getTournamentStandings,
 } from "@/lib/data";
 import AddDayForm from "@/components/AddDayForm";
 import AddTeamForm from "@/components/AddTeamForm";
+import DayRow from "@/components/DayRow";
+import TeamCard from "@/components/TeamCard";
+import StandingsTable from "@/components/StandingsTable";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +22,10 @@ export default async function TournamentDashboard({
   const tournament = await getTournamentBySlug(params.slug);
   if (!tournament) notFound();
 
-  const [days, teams] = await Promise.all([
+  const [days, teams, standings] = await Promise.all([
     getDaysForTournament(tournament.id),
     getTeamsForTournament(tournament.id),
+    getTournamentStandings(tournament.id),
   ]);
 
   return (
@@ -36,6 +41,16 @@ export default async function TournamentDashboard({
         </div>
 
         <section className="space-y-3">
+          <h2 className="text-sm font-medium text-neutral-300 uppercase tracking-wide">
+            Tournament Standings
+          </h2>
+          <StandingsTable
+            rows={standings}
+            emptyMessage="No results yet — standings fill in once matches have scores."
+          />
+        </section>
+
+        <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium text-neutral-300 uppercase tracking-wide">
               Days
@@ -48,18 +63,7 @@ export default async function TournamentDashboard({
           ) : (
             <div className="space-y-2">
               {days.map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/t/${tournament.slug}/day/${d.day_number}`}
-                  className="block rounded-md border border-neutral-800 bg-neutral-900 px-4 py-3 hover:border-neutral-700"
-                >
-                  <p className="font-medium">
-                    Day {d.day_number}
-                    {d.label ? (
-                      <span className="text-neutral-400 font-normal"> — {d.label}</span>
-                    ) : null}
-                  </p>
-                </Link>
+                <DayRow key={d.id} slug={tournament.slug} day={d} />
               ))}
             </div>
           )}
@@ -76,17 +80,9 @@ export default async function TournamentDashboard({
           {teams.length === 0 ? (
             <p className="text-sm text-neutral-500">No teams yet.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {teams.map((t) => (
-                <div
-                  key={t.id}
-                  className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm"
-                >
-                  <span className="font-medium">{t.name}</span>
-                  {t.tag ? (
-                    <span className="text-neutral-500"> [{t.tag}]</span>
-                  ) : null}
-                </div>
+                <TeamCard key={t.id} team={t} />
               ))}
             </div>
           )}
