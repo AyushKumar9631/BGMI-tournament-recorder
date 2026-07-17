@@ -51,7 +51,7 @@ export async function getTournaments(): Promise<Tournament[]> {
     .from("tournaments")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getTournaments: ${error.message}`);
   return data ?? [];
 }
 
@@ -64,7 +64,7 @@ export async function getTournamentBySlug(
     .select("*")
     .eq("slug", slug)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getTournamentBySlug: ${error.message}`);
   return data;
 }
 
@@ -77,7 +77,7 @@ export async function getDaysForTournament(
     .select("*")
     .eq("tournament_id", tournamentId)
     .order("day_number", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getDaysForTournament: ${error.message}`);
   return data ?? [];
 }
 
@@ -92,7 +92,7 @@ export async function getDayByNumber(
     .eq("tournament_id", tournamentId)
     .eq("day_number", dayNumber)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getDayByNumber: ${error.message}`);
   return data;
 }
 
@@ -105,7 +105,7 @@ export async function getTeamsForTournament(
     .select("*")
     .eq("tournament_id", tournamentId)
     .order("name", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getTeamsForTournament: ${error.message}`);
   return data ?? [];
 }
 
@@ -116,7 +116,7 @@ export async function getMatchesForDay(dayId: string): Promise<Match[]> {
     .select("*")
     .eq("day_id", dayId)
     .order("match_number", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getMatchesForDay: ${error.message}`);
   return data ?? [];
 }
 
@@ -131,7 +131,7 @@ export async function getMatchByNumber(
     .eq("day_id", dayId)
     .eq("match_number", matchNumber)
     .maybeSingle();
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getMatchByNumber: ${error.message}`);
   return data;
 }
 
@@ -146,7 +146,7 @@ export async function getSlotsForMatch(
     )
     .eq("match_id", matchId)
     .order("slot_number", { ascending: true });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(`getSlotsForMatch: ${error.message}`);
 
   type TeamJoin = { id: string; name: string; tag: string | null };
   type RawSlotRow = Omit<SlotWithTeam, "team"> & {
