@@ -30,6 +30,7 @@ export interface Database {
           slug?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       days: {
         Row: {
@@ -53,6 +54,15 @@ export interface Database {
           label?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "days_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       matches: {
         Row: {
@@ -76,6 +86,15 @@ export interface Database {
           map_name?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "matches_day_id_fkey";
+            columns: ["day_id"];
+            isOneToOne: false;
+            referencedRelation: "days";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       teams: {
         Row: {
@@ -99,6 +118,15 @@ export interface Database {
           tag?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "teams_tournament_id_fkey";
+            columns: ["tournament_id"];
+            isOneToOne: false;
+            referencedRelation: "tournaments";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       match_slots: {
         Row: {
@@ -135,7 +163,27 @@ export interface Database {
           kills?: number;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "match_slots_match_id_fkey";
+            columns: ["match_id"];
+            isOneToOne: false;
+            referencedRelation: "matches";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "match_slots_team_id_fkey";
+            columns: ["team_id"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
+    Views: Record<string, never>;
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
