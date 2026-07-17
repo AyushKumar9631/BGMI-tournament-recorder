@@ -5,7 +5,19 @@ import CreateTournamentForm from "@/components/CreateTournamentForm";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const tournaments = await getTournaments();
+  // --- TEMPORARY DEBUG WRAPPER ---
+  // Surfaces any error instead of letting it get swallowed, and shows the
+  // raw fetch result on the page itself. Revert to the plain version once
+  // the bug is found.
+  let tournaments: Awaited<ReturnType<typeof getTournaments>> = [];
+  let debugError: string | null = null;
+
+  try {
+    tournaments = await getTournaments();
+  } catch (e) {
+    debugError = e instanceof Error ? e.stack ?? e.message : String(e);
+  }
+  // --- END DEBUG WRAPPER ---
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100 p-8">
@@ -18,6 +30,17 @@ export default async function Home() {
             Create a tournament, or open an existing one below.
           </p>
         </div>
+
+        {/* TEMPORARY DEBUG PANEL — remove once diagnosed */}
+        <div className="rounded-md border border-yellow-700 bg-yellow-950/40 p-3 text-xs text-yellow-200 space-y-1">
+          <p>DEBUG: rendered at {new Date().toISOString()}</p>
+          <p>DEBUG: tournaments.length = {tournaments.length}</p>
+          <p>DEBUG: error = {debugError ?? "none"}</p>
+          <pre className="whitespace-pre-wrap break-all">
+            {JSON.stringify(tournaments, null, 2)}
+          </pre>
+        </div>
+        {/* END TEMPORARY DEBUG PANEL */}
 
         <CreateTournamentForm />
 
